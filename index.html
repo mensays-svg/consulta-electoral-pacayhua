@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta Electoral Pacayhua</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+            color: #18283b;
+            background: linear-gradient(110deg, rgba(7,24,43,.78), rgba(10,45,69,.52));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            max-width: 500px;
+            width: 100%;
+        }
+        h2 {
+            margin-top: 0;
+            color: #07182b;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #0a2d45;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #07182b;
+        }
+        .error-message {
+            color: #d9534f;
+            background-color: #fdf7f7;
+            border: 1px solid #d9534f;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 15px;
+            display: none;
+            font-size: 14px;
+        }
+        .result-card {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Consulta Electoral</h2>
+    <div class="form-group">
+        <label for="fullName">Apellidos y Nombres Completos:</label>
+        <input type="text" id="fullName" placeholder="Ej. Pérez Gómez Juan Carlos" autocomplete="off">
+    </div>
+    <button onclick="buscarElector()">Buscar</button>
+
+    <div id="errorMessage" class="error-message"></div>
+    <div id="resultCard" class="result-card"></div>
+</div>
+
+<script>
+    // Configuración de Supabase (Asegúrate de colocar tus credenciales correctas)
+    const SUPABASE_URL = "https://ewjqpnwcrtvvruicwfxx.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_hpHSSO87InJhDrwS-9gssA_0VDHgEeX";
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Función auxiliar para normalizar texto (quita acentos y convierte a minúsculas)
+    function normalizarTexto(texto) {
+        return texto
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .trim();
+    }
+
+    async function buscarElector() {
+        const inputField = document.getElementById("fullName");
+        const errorDiv = document.getElementById("errorMessage");
+        const resultDiv = document.getElementById("resultCard");
+
+        // Limpieza de UI
+        errorDiv.style.display = "none";
+        errorDiv.innerText = "";
+        resultDiv.style.display = "none";
+        resultDiv.innerHTML = "";
+
+        const rawValue = inputField.value.trim();
+        
+        // Separa el texto ingresado por espacios limpios
+        const palabras = rawValue.split(/\s+/).filter(word => word.length > 0);
+
+        // VALIDACIÓN: Si ingresa solo una palabra (solo nombre o solo apellido) o nada
+        if (palabras.length < 2) {
+            errorDiv.innerText = "Error: Debe ingresar sus apellidos y nombres completos (mínimo dos palabras).";
+            errorDiv.style.display = "block";
+            return;
+        }
+
+        // Normalizamos la cadena para la búsqueda
+        const busquedaNormalizada = normalizarTexto(rawValue);
+
+        try {
+            // Consulta a Supabase utilizando ilike para insensibilidad a mayúsculas/minúsculas
+            // Se asume la columna 'nombres_completos' en la tabla 'electores'
+            const { data, error } = await supabase
+                .from("electores")
+                .select("*")
+                .ilike("nombres_completos", `%${rawValue}%`);
+
+            if (error) throw error;
+
+            // Filtrado adicional en JS para garantizar coincidencia sin importar acentos/tildes
+            const resultadosCoincidentes = data.filter(elector => {
+                const nombreBdNormalizado = normalizarTexto(elector.nombres_completos || "");
+                return nombreBdNormalizado.includes(busquedaNormalizada);
+            });
+
+            if (resultadosCoincidentes.length === 0) {
+                errorDiv.innerText = "No se encontraron registros que coincidan con los apellidos y nombres ingresados.";
+                errorDiv.style.display = "block";
+            } else {
+                // Mostrar los resultados
+                let htmlContent = "<h3>Resultados encontrados:</h3>";
+                resultadosCoincidentes.forEach(elector => {
+                    htmlContent += `
+                        <p><strong>Nombre:</strong> ${elector.nombres_completos}</p>
+                        <p><strong>Mesa de Votación:</strong> ${elector.mesa || 'N/A'}</p>
+                        <p><strong>Lugar:</strong> ${elector.lugar || 'N/A'}</p>
+                        <hr>
+                    `;
+                });
+                resultDiv.innerHTML = htmlContent;
+                resultDiv.style.display = "block";
+            }
+
+        } catch (err) {
+            console.error("Error al realizar la consulta:", err);
+            errorDiv.innerText = "Ocurrió un error al procesar la búsqueda. Intente nuevamente.";
+            errorDiv.style.display = "block";
+        }
+    }
+</script>
+
+</body>
+</html>
