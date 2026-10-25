@@ -21,8 +21,8 @@
 <script>
 // Configura estos valores con los datos públicos del proyecto Supabase.
 // La clave anon/publishable puede estar en el navegador; NUNCA pongas aquí una service_role key.
-const SUPABASE_URL = 'PEGA_AQUI_LA_URL_DE_TU_PROYECTO';
-const SUPABASE_ANON_KEY = 'PEGA_AQUI_TU_CLAVE_PUBLICABLE';
+const SUPABASE_URL = 'https://ewjqpnwcrtvvruicwfxx.supabase.co/rest/v1/';
+const SUPABASE_ANON_KEY = 'sb_publishable_hpHSSO87InJhDrwS-9gssA_0VDHgEeX';
 let db=null, mode='dni';
 const $=id=>document.getElementById(id);
 function sanitize(s){return String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es').replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ')}
