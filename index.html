@@ -60,7 +60,7 @@ function show(message,state='info',title='Revisa tu consulta'){
   heading.append(icon,element('h2','result-title',title));
   res.replaceChildren(heading,element('p','result-message',message));
   const electionNotice=element('p','election-notice');
-  electionNotice.append(element('strong','','¡Este 1 de noviembre son las elecciones en Pacayhua!'),' Cumple con tu comunidad y acude a votar.');
+  electionNotice.append(element('strong','','¡Este 1 de noviembre son las elecciones en Pacayhua!'),' En estas elecciones participan ',element('strong','','745 electores'),'. Cumple con tu comunidad y acude a votar.');
   res.append(electionNotice);
 }
 function showResults(items){
