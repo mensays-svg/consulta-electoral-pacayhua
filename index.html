@@ -57,7 +57,6 @@ document.querySelector('#tab-nombre').addEventListener('click', () => setMode('n
 function getItems(data) {
   if (Array.isArray(data)) return data;
   if (!data || typeof data !== 'object') return null;
-  if (Array.isArray(data.resultado)) return data.resultado;
   if (Array.isArray(data.data)) return data.data;
   if (Array.isArray(data.resultados)) return data.resultados;
   if (Array.isArray(data.results)) return data.results;
